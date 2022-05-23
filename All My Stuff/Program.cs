@@ -23,10 +23,10 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        string Version = "Version 1.0.0";
+        static readonly string Version = "Version 1.0.0";
         MyIni ini = new MyIni();
-        string ConfigSection = "Inventory";
-        string DisplaySectionPrefix = "Display";
+        static readonly string ConfigSection = "Inventory";
+        static readonly string DisplaySectionPrefix = "_Display";
         StringBuilder SectionCandidateName = new StringBuilder();
         List<String> SectionNames = new List<string>();
         SortedDictionary<string, Item> Stock = new SortedDictionary<string, Item>();
@@ -106,7 +106,7 @@ namespace IngameScript
                     {
                         SectionCandidateName.Clear();
                         SectionCandidateName.Append(DisplaySectionPrefix).Append(displayNumber.ToString());
-                        if (section.Equals(SectionCandidateName.ToString(), ignoreCase) && ini.Get(section, "script").ToString().Equals(ConfigSection, ignoreCase))
+                        if (section.Equals(SectionCandidateName.ToString(), ignoreCase))
                         {
                             AddScreen(Provider, displayNumber, section);
                         }
