@@ -37,9 +37,12 @@ namespace IngameScript
             private Color HighlightColor;
             private int linesToSkip;
             private bool monospace;
-            private readonly String SpritePrefix = "MyObjectBuilder_Component/";
             private bool MakeSpriteCacheDirty = false;
-            private string previousType = "";
+            private string previousType;
+            private string Heading = "Item";
+            private bool unfiltered = true;
+            private string Filter;
+            private int characters_to_skip = "MyObjectBuilder_".Length;
 
             public ManagedDisplay(IMyTextSurface surface, float scale = 1.0f, Color highlightColor = new Color(), int linesToSkip = 0, bool monospace = false)
             {
@@ -64,8 +67,14 @@ namespace IngameScript
 
             private void AddHeading()
             {
+                float finalColumnWidth = HeadingFontSize * 80;
+                // that thing above is rough - this is just used to stop headings colliding, nothing serious,
+                // and is way cheaper than allocating a StringBuilder and measuring the width of the final
+                // column heading text in pixels.
                 surface.Script = "";
                 surface.ScriptBackgroundColor = Color.Black;
+                if (!unfiltered)
+                    Heading = Filter;
                 Position = new Vector2(viewport.Width / 10f, StartHeight) + viewport.Position;
                 frame.Add(new MySprite()
                 {
@@ -78,17 +87,19 @@ namespace IngameScript
                     Alignment = TextAlignment.CENTER
                 });
                 Position.X += viewport.Width / 8f;
+                frame.Add(MySprite.CreateClipRect(new Rectangle((int)Position.X, (int)Position.Y, (int)(viewport.Width - Position.X - finalColumnWidth), (int)(Position.Y + HeadingHeight))));
                 frame.Add(new MySprite()
                 {
                     Type = SpriteType.TEXT,
-                    Data = "Item",
+                    Data = Heading,
                     Position = Position,
                     RotationOrScale = HeadingFontSize,
                     Color = HighlightColor,
                     Alignment = TextAlignment.LEFT,
                     FontId = "White"
                 });
-                Position.X += viewport.Width * 6f / 8f;
+                frame.Add(MySprite.CreateClearClipRect());
+                Position.X = viewport.Width ;
                 frame.Add(new MySprite()
                 {
                     Type = SpriteType.TEXT,
@@ -101,6 +112,15 @@ namespace IngameScript
                 });
                 Position.Y += HeadingHeight;
             }
+
+            internal void SetFilter(string filter)
+            {                
+                if (null == filter || filter.Length == 0)
+                    return;
+                Filter = filter;
+                unfiltered = false;
+            }
+
             private void RenderRow(Program.Item item)
             {
                 Color TextColor;
@@ -112,18 +132,20 @@ namespace IngameScript
                 {
                     TextColor = Color.Gray;
                 }
+                var first = previousType == "FIRST";
                 if (previousType != item.ItemType)
                 {
                     previousType = item.ItemType;
-                    frame.Add(new MySprite()
-                    {
-                        Type = SpriteType.TEXTURE,
-                        Data = "SquareSimple",
-                        Position = new Vector2(viewport.X,Position.Y),
-                        Size = new Vector2(viewport.Width, 1),
-                        RotationOrScale = 0,
-                        Color = HighlightColor,
-                    });
+                    if (!first)
+                        frame.Add(new MySprite()
+                        {
+                            Type = SpriteType.TEXTURE,
+                            Data = "SquareSimple",
+                            Position = new Vector2(viewport.X, Position.Y),
+                            Size = new Vector2(viewport.Width, 1),
+                            RotationOrScale = 0,
+                            Color = HighlightColor,
+                        });
                 }
                 frame.Add(new MySprite()
                 {
@@ -174,14 +196,18 @@ namespace IngameScript
                 }
                 AddHeading();
                 int renderLineCount = 0;
+                previousType = "FIRST";
                 foreach (var item in Stock.Keys)
                 {
-                    if (++renderLineCount > linesToSkip)
+                    if (unfiltered || Filter.Contains(Stock[item].ItemType.Substring(characters_to_skip)))
                     {
-                        Position.X = viewport.Width / 10f + viewport.Position.X;
-                        if (renderLineCount >= linesToSkip && renderLineCount < linesToSkip + WindowSize)
-                            RenderRow(Stock[item]);
-                        Position.Y += LineHeight;
+                        if (++renderLineCount > linesToSkip)
+                        {
+                            Position.X = viewport.Width / 10f + viewport.Position.X;
+                            if (renderLineCount >= linesToSkip && renderLineCount < linesToSkip + WindowSize)
+                                RenderRow(Stock[item]);
+                            Position.Y += LineHeight;
+                        }
                     }
                 }
                 frame.Dispose();

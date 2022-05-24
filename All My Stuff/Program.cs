@@ -23,10 +23,10 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.0.1";
+        static readonly string Version = "Version 1.1.0";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
-        static readonly string DisplaySectionPrefix = "_Display";
+        static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
         StringBuilder SectionCandidateName = new StringBuilder();
         List<String> SectionNames = new List<string>();
         SortedDictionary<string, Item> Stock = new SortedDictionary<string, Item>();
@@ -37,6 +37,8 @@ namespace IngameScript
         IEnumerator<bool> _stateMachine;
         int delayCounter = 0;
         int delay;
+        bool TranslateEnabled; // Enable translate feature globally
+        bool FilterEnabled;    // Enable filter feature globally
         bool rebuild = false;
 
         public class Item
@@ -49,9 +51,9 @@ namespace IngameScript
                 this.Amount = Amount;
             }
             public int Amount;
-            public String Sprite;
-            public String Name;
-            public String ItemType;
+            public string Sprite;
+            public string Name;
+            public string ItemType;
         }
 
         public void GetBlocks()
@@ -87,7 +89,12 @@ namespace IngameScript
                 B = byte.Parse(ColorStr.Substring(4, 2), System.Globalization.NumberStyles.HexNumber),
                 A = 255
             };
-            Screens.Add(new ManagedDisplay(display, scale, color, linesToSkip, monospace));
+            var managedDisplay = new ManagedDisplay(display, scale, color, linesToSkip, monospace);
+            if (FilterEnabled)
+            {
+                managedDisplay.SetFilter(ini.Get(section, "filter").ToString(null));
+            }
+            Screens.Add(managedDisplay);
         }
 
         private void TryAddDiscreteScreens(IMyTerminalBlock block)
@@ -104,11 +111,18 @@ namespace IngameScript
                 {
                     for (int displayNumber = 0; displayNumber < Provider.SurfaceCount; ++displayNumber)
                     {
-                        SectionCandidateName.Clear();
-                        SectionCandidateName.Append(DisplaySectionPrefix).Append(displayNumber.ToString());
-                        if (section.Equals(SectionCandidateName.ToString(), ignoreCase))
+                        if (displayNumber < Provider.SurfaceCount || Provider.SurfaceCount == 0)
                         {
-                            AddScreen(Provider, displayNumber, section);
+                            SectionCandidateName.Clear();
+                            SectionCandidateName.Append(DisplaySectionPrefix).Append(displayNumber.ToString());
+                            if (section.Equals(SectionCandidateName.ToString(), ignoreCase))
+                            {
+                                AddScreen(Provider, displayNumber, section);
+                            }
+                        }
+                        else
+                        {
+                            Echo("Warning: " + block.CustomName + " doesn't have a display number " + ini.Get(ConfigSection, "display").ToString());
                         }
                     }
                 }
@@ -122,7 +136,7 @@ namespace IngameScript
                 return;
             ini.TryParse(block.CustomData);
             var displayNumber = ini.Get(ConfigSection, "display").ToUInt16();
-            if (displayNumber < ((IMyTextSurfaceProvider)Provider).SurfaceCount || ((IMyTextSurfaceProvider)Provider).SurfaceCount == 0)
+            if (displayNumber < Provider.SurfaceCount || Provider.SurfaceCount == 0)
             {
                 AddScreen(Provider, displayNumber, ConfigSection);
             }
@@ -184,8 +198,8 @@ namespace IngameScript
         public Program()
         {
             Runtime.UpdateFrequency = UpdateFrequency.Update100;
-            GetBlocks();
             ReadConfig();
+            GetBlocks();
         }
 
         private void ReadConfig()
@@ -193,6 +207,8 @@ namespace IngameScript
             if (ini.TryParse(Me.CustomData))
             {
                 delay = ini.Get(ConfigSection, "delay").ToInt32(3);
+                TranslateEnabled = ini.Get(ConfigSection, "enabletranslate").ToBoolean(false);
+                FilterEnabled = ini.Get(ConfigSection, "enablefilter").ToBoolean(false);
             }
         }
 
@@ -202,6 +218,8 @@ namespace IngameScript
             Echo(Screens.Count + " screens");
             Echo(Containers.Count + " blocks with inventories");
             Echo(Stock.Count + " items being tracked");
+            Echo("Filtering " + (FilterEnabled ? "enabled" : "disabled"));
+            Echo("Translation " + (TranslateEnabled ? "enabled" : "disabled"));
             foreach (var display in Screens)
             {
                 display.Render(Stock);
@@ -221,8 +239,8 @@ namespace IngameScript
                     if (rebuild)
                     {
                         rebuild = false;
-                        GetBlocks();
                         ReadConfig();
+                        GetBlocks();
                     }
                     delayCounter = 0;
                     _stateMachine = CountItems();
