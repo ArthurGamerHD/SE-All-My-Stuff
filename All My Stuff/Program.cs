@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.1.0";
+        static readonly string Version = "Version 1.1.1";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
@@ -64,8 +64,8 @@ namespace IngameScript
             {
                 if (!block.IsSameConstructAs(Me))
                     return false;
-                TryAddDiscreteScreens(block);
-                TryAddScreen(block);
+                if (!TryAddDiscreteScreens(block))
+                    TryAddScreen(block);
                 if (!block.HasInventory)
                     return false;
                 return true;
@@ -97,11 +97,12 @@ namespace IngameScript
             Screens.Add(managedDisplay);
         }
 
-        private void TryAddDiscreteScreens(IMyTerminalBlock block)
+        private bool TryAddDiscreteScreens(IMyTerminalBlock block)
         {
+            bool retval = false;
             IMyTextSurfaceProvider Provider = block as IMyTextSurfaceProvider;
             if (null == Provider || Provider.SurfaceCount == 0)
-                return;
+                return true;
             StringComparison ignoreCase = StringComparison.InvariantCultureIgnoreCase;
             ini.TryParse(block.CustomData);
             ini.GetSections(SectionNames);
@@ -111,22 +112,20 @@ namespace IngameScript
                 {
                     for (int displayNumber = 0; displayNumber < Provider.SurfaceCount; ++displayNumber)
                     {
-                        if (displayNumber < Provider.SurfaceCount || Provider.SurfaceCount == 0)
+                        if (displayNumber < Provider.SurfaceCount)
                         {
                             SectionCandidateName.Clear();
                             SectionCandidateName.Append(DisplaySectionPrefix).Append(displayNumber.ToString());
                             if (section.Equals(SectionCandidateName.ToString(), ignoreCase))
                             {
                                 AddScreen(Provider, displayNumber, section);
+                                retval = true;
                             }
-                        }
-                        else
-                        {
-                            Echo("Warning: " + block.CustomName + " doesn't have a display number " + ini.Get(ConfigSection, "display").ToString());
                         }
                     }
                 }
             }
+            return retval;
         }
 
         private void TryAddScreen(IMyTerminalBlock block)

@@ -123,6 +123,10 @@ namespace IngameScript
 
             private void RenderRow(Program.Item item)
             {
+                float finalColumnWidth = HeadingFontSize * 80;
+                // that thing above is rough - this is just used to stop headings colliding, nothing serious,
+                // and is way cheaper than allocating a StringBuilder and measuring the width of the final
+                // column heading text in pixels.
                 Color TextColor;
                 if (item.Amount == 0)
                 {
@@ -158,6 +162,7 @@ namespace IngameScript
                     Alignment = TextAlignment.CENTER,
                 });
                 Position.X += viewport.Width / 8f;
+                frame.Add(MySprite.CreateClipRect(new Rectangle((int)Position.X, (int)Position.Y, (int)(viewport.Width - Position.X - finalColumnWidth), (int)(Position.Y + HeadingHeight))));
                 frame.Add(new MySprite()
                 {
                     Type = SpriteType.TEXT,
@@ -168,6 +173,7 @@ namespace IngameScript
                     Alignment = TextAlignment.LEFT,
                     FontId = monospace?"Monospace":"White"
                 });
+                frame.Add(MySprite.CreateClearClipRect());
                 Position.X += viewport.Width * 6f / 8f;
                 frame.Add(new MySprite()
                 {
@@ -199,7 +205,8 @@ namespace IngameScript
                 previousType = "FIRST";
                 foreach (var item in Stock.Keys)
                 {
-                    if (unfiltered || Filter.Contains(Stock[item].ItemType.Substring(characters_to_skip)))
+                    // Contains with StringComparison.InvariantCultureIgnoreCase is prohibited )-:
+                    if (unfiltered || Filter.ToLower().Contains(Stock[item].ItemType.Substring(characters_to_skip).ToLower()))
                     {
                         if (++renderLineCount > linesToSkip)
                         {
