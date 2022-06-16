@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.1.1";
+        static readonly string Version = "Version 1.1.2";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
@@ -31,8 +31,6 @@ namespace IngameScript
         List<String> SectionNames = new List<string>();
         SortedDictionary<string, Item> Stock = new SortedDictionary<string, Item>();
         List<MyInventoryItem> Items = new List<MyInventoryItem>();
-        List<MyIniKey> iniKeys = new List<MyIniKey>();
-        List<MyProductionItem> Queue = new List<MyProductionItem>();
         List<ManagedDisplay> Screens = new List<ManagedDisplay>();
         IEnumerator<bool> _stateMachine;
         int delayCounter = 0;
