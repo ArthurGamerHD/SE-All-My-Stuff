@@ -72,7 +72,6 @@ namespace IngameScript
                 // and is way cheaper than allocating a StringBuilder and measuring the width of the final
                 // column heading text in pixels.
                 surface.Script = "";
-                surface.ScriptBackgroundColor = Color.Black;
                 if (!unfiltered)
                     Heading = Filter;
                 Position = new Vector2(viewport.Width / 10f, StartHeight) + viewport.Position;
@@ -134,7 +133,7 @@ namespace IngameScript
                 }
                 else
                 {
-                    TextColor = Color.Gray;
+                    TextColor = surface.ScriptForegroundColor;
                 }
                 var first = previousType == "FIRST";
                 if (previousType != item.ItemType)
@@ -198,7 +197,9 @@ namespace IngameScript
                         Type = SpriteType.TEXTURE,
                         Data = "SquareSimple",
                         Color = surface.BackgroundColor,
-                    });
+                        Position = new Vector2(0, 0),
+                        Size=new Vector2(0,0)
+                    });                    
                 }
                 AddHeading();
                 int renderLineCount = 0;
