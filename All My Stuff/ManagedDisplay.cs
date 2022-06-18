@@ -43,6 +43,7 @@ namespace IngameScript
             private bool unfiltered = true;
             private string Filter;
             private int characters_to_skip = "MyObjectBuilder_".Length;
+            private Color BackgroundColor, ForegroundColor;
 
             public ManagedDisplay(IMyTextSurface surface, float scale = 1.0f, Color highlightColor = new Color(), int linesToSkip = 0, bool monospace = false)
             {
@@ -50,6 +51,8 @@ namespace IngameScript
                 this.HighlightColor = highlightColor;
                 this.linesToSkip = linesToSkip;
                 this.monospace = monospace;
+                this.BackgroundColor = surface.ScriptBackgroundColor;
+                this.ForegroundColor = surface.ScriptForegroundColor;
 
                 // Scale everything!
                 StartHeight *= scale;
@@ -72,6 +75,8 @@ namespace IngameScript
                 // and is way cheaper than allocating a StringBuilder and measuring the width of the final
                 // column heading text in pixels.
                 surface.Script = "";
+                surface.ScriptBackgroundColor = BackgroundColor;
+                surface.ScriptForegroundColor = ForegroundColor;
                 if (!unfiltered)
                     Heading = Filter;
                 Position = new Vector2(viewport.Width / 10f, StartHeight) + viewport.Position;
