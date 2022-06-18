@@ -74,9 +74,12 @@ namespace IngameScript
                 // that thing above is rough - this is just used to stop headings colliding, nothing serious,
                 // and is way cheaper than allocating a StringBuilder and measuring the width of the final
                 // column heading text in pixels.
-                surface.Script = "";
-                surface.ScriptBackgroundColor = BackgroundColor;
-                surface.ScriptForegroundColor = ForegroundColor;
+                if (surface.Script != "")
+                {
+                    surface.Script = "";
+                    surface.ScriptBackgroundColor = BackgroundColor;
+                    surface.ScriptForegroundColor = ForegroundColor;
+                }
                 if (!unfiltered)
                     Heading = Filter;
                 Position = new Vector2(viewport.Width / 10f, StartHeight) + viewport.Position;
