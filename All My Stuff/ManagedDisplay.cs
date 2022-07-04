@@ -41,16 +41,18 @@ namespace IngameScript
             private string previousType;
             private string Heading = "Item";
             private bool unfiltered = true;
+            private bool SupressZeros = false;
             private string Filter;
             private int characters_to_skip = "MyObjectBuilder_".Length;
             private Color BackgroundColor, ForegroundColor;
 
-            public ManagedDisplay(IMyTextSurface surface, float scale = 1.0f, Color highlightColor = new Color(), int linesToSkip = 0, bool monospace = false)
+            public ManagedDisplay(IMyTextSurface surface, float scale = 1.0f, Color highlightColor = new Color(), int linesToSkip = 0, bool monospace = false, bool suppressZeros=false)
             {
                 this.surface = surface;
                 this.HighlightColor = highlightColor;
                 this.linesToSkip = linesToSkip;
                 this.monospace = monospace;
+                this.SupressZeros = suppressZeros;
                 this.BackgroundColor = surface.ScriptBackgroundColor;
                 this.ForegroundColor = surface.ScriptForegroundColor;
 
@@ -217,7 +219,7 @@ namespace IngameScript
                     // Contains with StringComparison.InvariantCultureIgnoreCase is prohibited )-:
                     if (unfiltered || Filter.ToLower().Contains(Stock[item].ItemType.Substring(characters_to_skip).ToLower()))
                     {
-                        if (++renderLineCount > linesToSkip)
+                        if ((Stock[item].Amount != 0 || !SupressZeros) && ++renderLineCount > linesToSkip)
                         {
                             Position.X = viewport.Width / 10f + viewport.Position.X;
                             if (renderLineCount >= linesToSkip && renderLineCount < linesToSkip + WindowSize)

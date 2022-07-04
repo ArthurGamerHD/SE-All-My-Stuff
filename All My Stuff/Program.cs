@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.2.0";
+        static readonly string Version = "Version 1.2.1";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
@@ -75,6 +75,7 @@ namespace IngameScript
             var display = ((IMyTextSurfaceProvider)provider).GetSurface(displayNumber);
             var linesToSkip = ini.Get(section, "skip").ToInt16();
             bool monospace = ini.Get(section, "mono").ToBoolean();
+            bool suppressZeros = ini.Get(section, "suppress_zeros").ToBoolean();
             float scale = ini.Get(section, "scale").ToSingle(1.0f);
             string DefaultColor = "FF4500";
             string ColorStr = ini.Get(section, "color").ToString(DefaultColor);
@@ -87,7 +88,7 @@ namespace IngameScript
                 B = byte.Parse(ColorStr.Substring(4, 2), System.Globalization.NumberStyles.HexNumber),
                 A = 255
             };
-            var managedDisplay = new ManagedDisplay(display, scale, color, linesToSkip, monospace);
+            var managedDisplay = new ManagedDisplay(display, scale, color, linesToSkip, monospace, suppressZeros);
             if (FilterEnabled)
             {
                 managedDisplay.SetFilter(ini.Get(section, "filter").ToString(null));

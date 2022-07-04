@@ -12,6 +12,7 @@ scale = 1.0     # Make things on the display larger or smaller
 skip = 0         # Use this on a second screen if the lines don't all fit on the first, to skip lines
 color = 00FF55 # Use this to customise the header color of a screen
 mono = false     # change to true to display numbers in the monospace font
+suppress_zeros = false # Change to truew to hide (red) lines showing zero stock
 enablefilter = true  # Enable filtering
 filter = ConsumableItem, Datapad, PhysicalGunObject, AmmoMagazine, Ore, Ingot, Component
 
