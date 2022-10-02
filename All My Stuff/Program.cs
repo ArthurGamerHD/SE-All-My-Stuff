@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.2.1";
+        static readonly string Version = "Version 1.2.2";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
@@ -64,9 +64,7 @@ namespace IngameScript
                     return false;
                 if (!TryAddDiscreteScreens(block))
                     TryAddScreen(block);
-                if (!block.HasInventory)
-                    return false;
-                return true;
+                return block.HasInventory & block.ShowInInventory;
             });
         }
 
