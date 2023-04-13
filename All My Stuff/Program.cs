@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.2.2";
+        static readonly string Version = "Version 1.2.3";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
@@ -204,7 +204,7 @@ namespace IngameScript
             {
                 delay = ini.Get(ConfigSection, "delay").ToInt32(3);
                 TranslateEnabled = ini.Get(ConfigSection, "enabletranslate").ToBoolean(false);
-                FilterEnabled = ini.Get(ConfigSection, "enablefilter").ToBoolean(false);
+                FilterEnabled = ini.Get(ConfigSection, "enablefilter").ToBoolean(true);
             }
         }
 
