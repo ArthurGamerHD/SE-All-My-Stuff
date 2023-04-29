@@ -23,35 +23,42 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.2.3";
+        static readonly string Version = "Version 1.3.0";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
         StringBuilder SectionCandidateName = new StringBuilder();
         List<String> SectionNames = new List<string>();
         SortedDictionary<string, Item> Stock = new SortedDictionary<string, Item>();
+        SortedDictionary<string, string> Translation = new SortedDictionary<string, string>();        
         List<MyInventoryItem> Items = new List<MyInventoryItem>();
         List<ManagedDisplay> Screens = new List<ManagedDisplay>();
         IEnumerator<bool> _stateMachine;
         int delayCounter = 0;
         int delay;
+        private static int characters_to_skip = "MyObjectBuilder_".Length;
         bool TranslateEnabled; // Enable translate feature globally
         bool FilterEnabled;    // Enable filter feature globally
         bool rebuild = false;
+        private List<MyIniKey> TranslationKeys = new List<MyIniKey>();
 
         public class Item
         {
-            public Item(MyInventoryItem item, int Amount = 0)
+            public Item(MyInventoryItem item, Program program, int Amount = 0)
             {
                 this.Sprite = item.Type.ToString();
                 this.Name = item.Type.SubtypeId;
                 this.ItemType = item.Type.TypeId;
                 this.Amount = Amount;
+                this.NaturalName = Name;
+                this.KeyString = program.TranslateEnabled ? item.Type.TypeId.Substring(characters_to_skip).ToLower() + '/' + Name.ToLower() : "";
             }
+            public string KeyString;
             public int Amount;
             public string Sprite;
             public string Name;
             public string ItemType;
+            public string NaturalName;
         }
 
         public void GetBlocks()
@@ -179,16 +186,20 @@ namespace IngameScript
                         inventory.GetItems(Items);
                         foreach (var item in Items)
                         {
-                            string key = item.Type.ToString();
+                            string key = item.Type.ToString();                            
                             if (!Stock.ContainsKey(key))
-                                Stock.Add(key, new Item(item));
+                            {
+                                Item newItem = new Item(item, this);                                
+                                newItem.NaturalName = Translation.ContainsKey(newItem.KeyString) ? Translation[newItem.KeyString] : newItem.Name;
+                                Stock.Add(key, newItem);
+                            }
                             Stock[key].Amount += item.Amount.ToIntSafe();
                         }
                         yield return true;
                     }
                 }
             }
-            EchoStuff();
+            RenderScreens();
         }
 
         public Program()
@@ -203,12 +214,25 @@ namespace IngameScript
             if (ini.TryParse(Me.CustomData))
             {
                 delay = ini.Get(ConfigSection, "delay").ToInt32(3);
-                TranslateEnabled = ini.Get(ConfigSection, "enabletranslate").ToBoolean(false);
+                TranslateEnabled = ini.ContainsSection("translation");                
                 FilterEnabled = ini.Get(ConfigSection, "enablefilter").ToBoolean(true);
+                if (TranslateEnabled)
+                {
+                    TranslationKeys.Clear();                    
+                    ini.GetKeys("translation", TranslationKeys);
+                    foreach (var key in TranslationKeys)
+                    {
+                        var lowerkey = key.Name.ToLower();
+                        if (Translation.ContainsKey(lowerkey))
+                            Translation[lowerkey] = ini.Get(key).ToString();
+                        else
+                            Translation.Add(lowerkey, ini.Get(key).ToString());
+                    }
+                }
             }
         }
 
-        private void EchoStuff()
+        private void RenderScreens()
         {
             Echo(Version);
             Echo(Screens.Count + " screens");

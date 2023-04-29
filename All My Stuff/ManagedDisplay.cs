@@ -43,7 +43,6 @@ namespace IngameScript
             private bool unfiltered = true;
             private bool SupressZeros = false;
             private string Filter;
-            private int characters_to_skip = "MyObjectBuilder_".Length;
             private Color BackgroundColor, ForegroundColor;
 
             public ManagedDisplay(IMyTextSurface surface, float scale = 1.0f, Color highlightColor = new Color(), int linesToSkip = 0, bool monospace = false, bool suppressZeros=false)
@@ -175,7 +174,7 @@ namespace IngameScript
                 frame.Add(new MySprite()
                 {
                     Type = SpriteType.TEXT,
-                    Data = item.Name,
+                    Data = item.NaturalName,
                     Position = Position,
                     RotationOrScale = RegularFontSize,
                     Color = TextColor,
@@ -217,7 +216,7 @@ namespace IngameScript
                 foreach (var item in Stock.Keys)
                 {
                     // Contains with StringComparison.InvariantCultureIgnoreCase is prohibited )-:
-                    if (unfiltered || Filter.ToLower().Contains(Stock[item].ItemType.Substring(characters_to_skip).ToLower()))
+                    if (unfiltered || Filter.ToLower().Contains(Stock[item].ItemType.Substring(Program.characters_to_skip).ToLower()))
                     {
                         if ((Stock[item].Amount != 0 || !SupressZeros) && ++renderLineCount > linesToSkip)
                         {
