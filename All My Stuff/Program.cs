@@ -27,32 +27,47 @@ namespace IngameScript
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
+        private const string KnowItemsString = "KnownItems";
         StringBuilder SectionCandidateName = new StringBuilder();
-        List<String> SectionNames = new List<string>();
+        StringBuilder knownItemsSb = new StringBuilder();
+        List<string> SectionNames = new List<string>();
         SortedDictionary<string, Item> Stock = new SortedDictionary<string, Item>();
-        SortedDictionary<string, string> Translation = new SortedDictionary<string, string>();        
+        SortedDictionary<string, string> Translation = new SortedDictionary<string, string>();
         List<MyInventoryItem> Items = new List<MyInventoryItem>();
         List<ManagedDisplay> Screens = new List<ManagedDisplay>();
         IEnumerator<bool> _stateMachine;
         int delayCounter = 0;
         int delay;
         private static int characters_to_skip = "MyObjectBuilder_".Length;
+        bool StoreKnownTypes;  // Enable save known types globally
         bool TranslateEnabled; // Enable translate feature globally
         bool FilterEnabled;    // Enable filter feature globally
-        bool rebuild = false;
+        bool rebuild;
+        bool clear;
         private List<MyIniKey> TranslationKeys = new List<MyIniKey>();
 
         public class Item
         {
-            public Item(MyInventoryItem item, Program program, int Amount = 0)
+            public Item(MyInventoryItem item, Program program, int amount = 0)
             {
                 this.Sprite = item.Type.ToString();
                 this.Name = item.Type.SubtypeId;
                 this.ItemType = item.Type.TypeId;
-                this.Amount = Amount;
+                this.Amount = amount;
                 this.NaturalName = Name;
                 this.KeyString = program.TranslateEnabled ? item.Type.TypeId.Substring(characters_to_skip).ToLower() + '/' + Name.ToLower() : "";
             }
+
+            public Item(string itemType, Program program, int amount = 0)
+            {
+                this.Sprite = itemType;
+                this.Name = itemType.Substring(characters_to_skip).Split('/')[1];
+                this.ItemType = itemType.Substring(characters_to_skip).Split('/')[0]; ;
+                this.Amount = amount;
+                this.NaturalName = Name;
+                this.KeyString = program.TranslateEnabled ? ItemType.Substring(characters_to_skip).ToLower() + '/' + Name.ToLower() : "";
+            }
+
             public string KeyString;
             public int Amount;
             public string Sprite;
@@ -167,6 +182,33 @@ namespace IngameScript
             }
         }
 
+        public IEnumerator<bool> LoadStorage()
+        {
+            ini.TryParse(Storage);
+
+            if (ini.ContainsKey(ConfigSection, KnowItemsString))
+            {
+                var items = ini.Get(ConfigSection, KnowItemsString).ToString();
+
+                if(string.IsNullOrWhiteSpace(items))
+                    yield break;
+
+                var itemTypes = items.Split('\n');
+
+                foreach (var item in itemTypes)
+                {
+                    if (!Stock.ContainsKey(item))
+                    {
+                        Item newItem = new Item(item, this);
+                        string translation;
+                        newItem.NaturalName = Translation.TryGetValue(newItem.KeyString, out translation) ? translation : newItem.Name;
+                        Stock.Add(item, newItem);
+                    }
+                    yield return true;
+                }
+            }
+        }
+
         public IEnumerator<bool> CountItems()
         {
             foreach (var Item in Stock.Keys)
@@ -186,10 +228,10 @@ namespace IngameScript
                         inventory.GetItems(Items);
                         foreach (var item in Items)
                         {
-                            string key = item.Type.ToString();                            
+                            string key = item.Type.ToString();
                             if (!Stock.ContainsKey(key))
                             {
-                                Item newItem = new Item(item, this);                                
+                                Item newItem = new Item(item, this);
                                 newItem.NaturalName = Translation.ContainsKey(newItem.KeyString) ? Translation[newItem.KeyString] : newItem.Name;
                                 Stock.Add(key, newItem);
                             }
@@ -202,11 +244,29 @@ namespace IngameScript
             RenderScreens();
         }
 
+        public IEnumerator<bool> RemoveEmptyItems()
+        {
+            var keys = Stock.Keys.ToList();
+
+            for (int i = Stock.Keys.Count - 1; i >= 0; i--)
+            {
+                if (Stock[keys[i]].Amount == 0)
+                {
+                    Stock.Remove(keys[i]);
+                    yield return true;
+                }
+            }
+            RenderScreens();
+        }
+
         public Program()
         {
-            Runtime.UpdateFrequency = UpdateFrequency.Update100;
+            Runtime.UpdateFrequency = UpdateFrequency.Update100 | UpdateFrequency.Once;
             ReadConfig();
             GetBlocks();
+
+            if (StoreKnownTypes)
+                _stateMachine = LoadStorage();
         }
 
         private void ReadConfig()
@@ -214,11 +274,12 @@ namespace IngameScript
             if (ini.TryParse(Me.CustomData))
             {
                 delay = ini.Get(ConfigSection, "delay").ToInt32(3);
-                TranslateEnabled = ini.ContainsSection("translation");                
+                TranslateEnabled = ini.ContainsSection("translation");
                 FilterEnabled = ini.Get(ConfigSection, "enablefilter").ToBoolean(true);
+                StoreKnownTypes = ini.Get(ConfigSection, "savetypes").ToBoolean(true);
                 if (TranslateEnabled)
                 {
-                    TranslationKeys.Clear();                    
+                    TranslationKeys.Clear();
                     ini.GetKeys("translation", TranslationKeys);
                     foreach (var key in TranslationKeys)
                     {
@@ -238,6 +299,7 @@ namespace IngameScript
             Echo(Screens.Count + " screens");
             Echo(Containers.Count + " blocks with inventories");
             Echo(Stock.Count + " items being tracked");
+            Echo("Saving " + (StoreKnownTypes ? "enabled" : "disabled"));
             Echo("Filtering " + (FilterEnabled ? "enabled" : "disabled"));
             Echo("Translation " + (TranslateEnabled ? "enabled" : "disabled"));
             foreach (var display in Screens)
@@ -262,8 +324,18 @@ namespace IngameScript
                         ReadConfig();
                         GetBlocks();
                     }
+
+                    if (clear)
+                    {
+                        clear = false;
+                        _stateMachine = RemoveEmptyItems();
+                    }
+                    else
+                    {
+                        _stateMachine = CountItems();
+                    }
+
                     delayCounter = 0;
-                    _stateMachine = CountItems();
                     RunItemCounter();
                 }
                 else
@@ -276,10 +348,27 @@ namespace IngameScript
                 _stateMachine = CountItems();
                 RunItemCounter();
             }
-            if (argument == "rebuild")
+            switch (argument)
             {
-                rebuild = true;
+                case "rebuild":
+                    rebuild = true;
+                    break;
+                case "clear":
+                    clear = true;
+                    break;
             }
+        }
+
+        public void Save()
+        {
+            if(!StoreKnownTypes)
+                return;
+
+            ini.TryParse(Storage);
+            knownItemsSb.Clear();
+            Stock.Keys.ToList().ForEach(key => knownItemsSb.AppendLine(key));
+            ini.Set(ConfigSection, KnowItemsString, knownItemsSb.ToString());
+            Storage = ini.ToString();
         }
     }
 }
