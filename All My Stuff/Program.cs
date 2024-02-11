@@ -48,24 +48,14 @@ namespace IngameScript
 
         public class Item
         {
-            public Item(MyInventoryItem item, Program program, int amount = 0)
-            {
-                this.Sprite = item.Type.ToString();
-                this.Name = item.Type.SubtypeId;
-                this.ItemType = item.Type.TypeId;
-                this.Amount = amount;
-                this.NaturalName = Name;
-                this.KeyString = program.TranslateEnabled ? item.Type.TypeId.Substring(characters_to_skip).ToLower() + '/' + Name.ToLower() : "";
-            }
-
             public Item(string itemType, Program program, int amount = 0)
             {
-                this.Sprite = itemType;
-                this.Name = itemType.Substring(characters_to_skip).Split('/')[1];
-                this.ItemType = itemType.Substring(characters_to_skip).Split('/')[0]; ;
-                this.Amount = amount;
-                this.NaturalName = Name;
-                this.KeyString = program.TranslateEnabled ? ItemType.Substring(characters_to_skip).ToLower() + '/' + Name.ToLower() : "";
+                Sprite = itemType;
+                Name = itemType.Substring(characters_to_skip).Split('/')[1];
+                ItemType = itemType.Split('/')[0]; ;
+                Amount = amount;
+                NaturalName = Name;
+                KeyString = program.TranslateEnabled ? ItemType.Substring(characters_to_skip).ToLower() + '/' + Name.ToLower() : "";
             }
 
             public string KeyString;
@@ -231,7 +221,7 @@ namespace IngameScript
                             string key = item.Type.ToString();
                             if (!Stock.ContainsKey(key))
                             {
-                                Item newItem = new Item(item, this);
+                                Item newItem = new Item(item.Type.ToString(), this);
                                 newItem.NaturalName = Translation.ContainsKey(newItem.KeyString) ? Translation[newItem.KeyString] : newItem.Name;
                                 Stock.Add(key, newItem);
                             }
