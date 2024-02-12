@@ -15,6 +15,7 @@ mono = false     # change to true to display numbers in the monospace font
 suppress_zeros = false # Change to true to hide (red) lines showing zero stock
 enablefilter = true  # Enable filtering
 filter = ConsumableItem, Datapad, PhysicalGunObject, AmmoMagazine, Ore, Ingot, Component
+savetypes = true
 
 An alternative, for those who wish to use more than one screen on a given
 block at once, is to configure displays in the following manner (this example
