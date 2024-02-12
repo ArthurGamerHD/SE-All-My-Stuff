@@ -32,7 +32,8 @@ namespace IngameScript
             private float LineHeight = 30f;
             private float HeadingFontSize = 1.3f;
             private float RegularFontSize = 1.0f;
-            private Vector2 Position;
+            private float finalColumnWidth;
+            private Vector2 Position, _padding;
             private int WindowSize;         // Number of lines shown on screen at once after heading
             private Color HighlightColor;
             private int linesToSkip;
@@ -64,17 +65,18 @@ namespace IngameScript
 
                 surface.ContentType = ContentType.SCRIPT;
                 surface.Script = "TSS_FactionIcon";
-                Vector2 padding = surface.TextureSize * (surface.TextPadding / 100);
-                viewport = new RectangleF((surface.TextureSize - surface.SurfaceSize) / 2f + padding, surface.SurfaceSize - (2*padding));
+                _padding = surface.TextureSize * (surface.TextPadding / 100);
+                viewport = new RectangleF((surface.TextureSize - surface.SurfaceSize) / 2f + _padding, surface.SurfaceSize - (2*_padding));
                 WindowSize = ((int)((viewport.Height - 10 * scale) / LineHeight));
+
+                finalColumnWidth = HeadingFontSize * 80;
+                // that thing above is rough - this is just used to stop headings colliding, nothing serious,
+                // and is way cheaper than allocating a StringBuilder and measuring the width of the final
+                // column heading text in pixels.
             }
 
             private void AddHeading()
             {
-                float finalColumnWidth = HeadingFontSize * 80;
-                // that thing above is rough - this is just used to stop headings colliding, nothing serious,
-                // and is way cheaper than allocating a StringBuilder and measuring the width of the final
-                // column heading text in pixels.
                 if (surface.Script != "")
                 {
                     surface.Script = "";
@@ -95,7 +97,7 @@ namespace IngameScript
                     Alignment = TextAlignment.CENTER
                 });
                 Position.X += viewport.Width / 8f;
-                frame.Add(MySprite.CreateClipRect(new Rectangle((int)Position.X, (int)Position.Y, (int)(viewport.Width - Position.X - finalColumnWidth), (int)(Position.Y + HeadingHeight))));
+                frame.Add(MySprite.CreateClipRect(new Rectangle((int)Position.X, (int)Position.Y, (int)(viewport.Width - Position.X + (viewport.X - _padding.X/2) - finalColumnWidth), (int)(Position.Y + HeadingHeight))));
                 frame.Add(new MySprite()
                 {
                     Type = SpriteType.TEXT,
@@ -107,7 +109,7 @@ namespace IngameScript
                     FontId = "White"
                 });
                 frame.Add(MySprite.CreateClearClipRect());
-                Position.X = viewport.Width ;
+                Position.X = viewport.Width + viewport.X - _padding.X / 2;
                 frame.Add(new MySprite()
                 {
                     Type = SpriteType.TEXT,
@@ -118,6 +120,7 @@ namespace IngameScript
                     Alignment = TextAlignment.RIGHT,
                     FontId = "White"
                 });
+
                 Position.Y += HeadingHeight;
             }
 
@@ -131,10 +134,6 @@ namespace IngameScript
 
             private void RenderRow(Program.Item item)
             {
-                float finalColumnWidth = HeadingFontSize * 80;
-                // that thing above is rough - this is just used to stop headings colliding, nothing serious,
-                // and is way cheaper than allocating a StringBuilder and measuring the width of the final
-                // column heading text in pixels.
                 Color TextColor;
                 if (item.Amount == 0)
                 {
@@ -170,7 +169,7 @@ namespace IngameScript
                     Alignment = TextAlignment.CENTER,
                 });
                 Position.X += viewport.Width / 8f;
-                frame.Add(MySprite.CreateClipRect(new Rectangle((int)Position.X, (int)Position.Y, (int)(viewport.Width - Position.X - finalColumnWidth), (int)(Position.Y + HeadingHeight))));
+                frame.Add(MySprite.CreateClipRect(new Rectangle((int)Position.X, (int)Position.Y, (int)(viewport.Width - Position.X + (viewport.X -_padding.X / 2) - finalColumnWidth), (int)(Position.Y + HeadingHeight))));
                 frame.Add(new MySprite()
                 {
                     Type = SpriteType.TEXT,
