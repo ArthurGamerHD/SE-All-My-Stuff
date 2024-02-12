@@ -23,10 +23,10 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.3.0";
+        private const string Version = "Version 1.4.0";
         MyIni ini = new MyIni();
-        static readonly string ConfigSection = "Inventory";
-        static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
+        private const string ConfigSection = "Inventory";
+        private const string DisplaySectionPrefix = ConfigSection + "_Display";
         private const string KnowItemsString = "KnownItems";
         StringBuilder SectionCandidateName = new StringBuilder();
         StringBuilder knownItemsSb = new StringBuilder();
