@@ -365,3 +365,4 @@ FodyWeavers.xsd
 
 # MDK - Space Engineers MDK
 *.props
+*.zip

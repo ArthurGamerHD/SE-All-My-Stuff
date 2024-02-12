@@ -50,12 +50,12 @@ namespace IngameScript
         {
             public Item(string itemType, Program program, int amount = 0)
             {
+                var temp = itemType.Split('/');
                 Sprite = itemType;
-                Name = itemType.Substring(characters_to_skip).Split('/')[1];
-                ItemType = itemType.Split('/')[0]; ;
+                Name = NaturalName = temp[1];
+                ItemType = temp[0];
                 Amount = amount;
-                NaturalName = Name;
-                KeyString = program.TranslateEnabled ? ItemType.Substring(characters_to_skip).ToLower() + '/' + Name.ToLower() : "";
+                KeyString = program.TranslateEnabled ? itemType.Substring(characters_to_skip).ToLower() : "";
             }
 
             public string KeyString;
