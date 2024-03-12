@@ -14,6 +14,7 @@ color = 00FF55 # Use this to customise the header color of a screen
 mono = false     # change to true to display numbers in the monospace font
 suppress_zeros = false # Change to true to hide (red) lines showing zero stock
 enablefilter = true  # Enable filtering
+separators = true  # Enable type separator lines
 filter = ConsumableItem, Datapad, PhysicalGunObject, AmmoMagazine, Ore, Ingot, Component
 savetypes = true
 

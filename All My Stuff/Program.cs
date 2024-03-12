@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        private const string Version = "Version 1.4.0";
+        private const string Version = "Version 1.5.0";
         MyIni ini = new MyIni();
         private const string ConfigSection = "Inventory";
         private const string DisplaySectionPrefix = ConfigSection + "_Display";
@@ -42,6 +42,7 @@ namespace IngameScript
         bool StoreKnownTypes;  // Enable save known types globally
         bool TranslateEnabled; // Enable translate feature globally
         bool FilterEnabled;    // Enable filter feature globally
+        bool separators;       // Control whether type separator lines are displayed on screen
         bool rebuild;
         bool clear;
         private List<MyIniKey> TranslationKeys = new List<MyIniKey>();
@@ -86,6 +87,7 @@ namespace IngameScript
             var linesToSkip = ini.Get(section, "skip").ToInt16();
             bool monospace = ini.Get(section, "mono").ToBoolean();
             bool suppressZeros = ini.Get(section, "suppress_zeros").ToBoolean();
+            bool separators = ini.Get(section, "separators").ToBoolean(this.separators);
             float scale = ini.Get(section, "scale").ToSingle(1.0f);
             string DefaultColor = "FF4500";
             string ColorStr = ini.Get(section, "color").ToString(DefaultColor);
@@ -98,7 +100,7 @@ namespace IngameScript
                 B = byte.Parse(ColorStr.Substring(4, 2), System.Globalization.NumberStyles.HexNumber),
                 A = 255
             };
-            var managedDisplay = new ManagedDisplay(display, scale, color, linesToSkip, monospace, suppressZeros);
+            var managedDisplay = new ManagedDisplay(display, scale, color, linesToSkip, monospace, suppressZeros, separators);
             if (FilterEnabled)
             {
                 managedDisplay.SetFilter(ini.Get(section, "filter").ToString(null));
@@ -266,6 +268,7 @@ namespace IngameScript
                 delay = ini.Get(ConfigSection, "delay").ToInt32(3);
                 TranslateEnabled = ini.ContainsSection("translation");
                 FilterEnabled = ini.Get(ConfigSection, "enablefilter").ToBoolean(true);
+                separators = ini.Get(ConfigSection, "separators").ToBoolean(true);
                 StoreKnownTypes = ini.Get(ConfigSection, "savetypes").ToBoolean(true);
                 if (TranslateEnabled)
                 {
@@ -291,6 +294,7 @@ namespace IngameScript
             Echo(Stock.Count + " items being tracked");
             Echo("Saving " + (StoreKnownTypes ? "enabled" : "disabled"));
             Echo("Filtering " + (FilterEnabled ? "enabled" : "disabled"));
+            Echo("Separators (global default) " + (separators ? "enabled" : "disabled"));
             Echo("Translation " + (TranslateEnabled ? "enabled" : "disabled"));
             foreach (var display in Screens)
             {
