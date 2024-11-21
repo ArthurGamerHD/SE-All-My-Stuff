@@ -35,16 +35,21 @@ namespace IngameScript
         SortedDictionary<string, string> Translation = new SortedDictionary<string, string>();
         List<MyInventoryItem> Items = new List<MyInventoryItem>();
         List<ManagedDisplay> Screens = new List<ManagedDisplay>();
+        StringBuilder echoBuffer = new StringBuilder();
+        string echoString = "Init...";
         IEnumerator<bool> _stateMachine;
         int delayCounter = 0;
         int delay;
-        private static int characters_to_skip = "MyObjectBuilder_".Length;
+
+        const string ob  = "MyObjectBuilder_";
+        const int characters_to_skip = 16; // same as "ob.Length"
+
         bool StoreKnownTypes;  // Enable save known types globally
         bool TranslateEnabled; // Enable translate feature globally
         bool FilterEnabled; // Enable filter feature globally
         bool FormatNames; // Enable name prettify feature globally
         bool FormatAmount; // Enable Number Abbreviation feature globally
-        bool separators;    // Control whether type separator lines are displayed on screen
+        bool Separators;    // Control whether type separator lines are displayed on screen
         bool rebuild;
         bool clear;
         private List<MyIniKey> TranslationKeys = new List<MyIniKey>();
@@ -90,7 +95,7 @@ namespace IngameScript
             var linesToSkip = ini.Get(section, "skip").ToInt16();
             bool monospace = ini.Get(section, "mono").ToBoolean();
             bool suppressZeros = ini.Get(section, "suppress_zeros").ToBoolean();
-            bool separators = ini.Get(section, "separators").ToBoolean(this.separators);
+            bool separators = ini.Get(section, "separators").ToBoolean(this.Separators);
             float scale = ini.Get(section, "scale").ToSingle(1.0f);
             bool formatAmount = ini.Get(section, "format_amount").ToBoolean(FormatAmount);
             string DefaultColor = "FF4500";
@@ -156,7 +161,7 @@ namespace IngameScript
             }
             else
             {
-                Echo("Warning: " + block.CustomName + " doesn't have a display number " + ini.Get(ConfigSection, "display").ToString());
+                echoBuffer.AppendLine("Warning: " + block.CustomName + " doesn't have a display number " + ini.Get(ConfigSection, "display").ToString());
             }
         }
 
@@ -196,8 +201,7 @@ namespace IngameScript
                     if (!Stock.ContainsKey(item))
                     {
                         Item newItem = new Item(item, this);
-                        string translation;
-                        newItem.NaturalName = Translation.TryGetValue(newItem.KeyString, out translation) ? translation : newItem.Name;
+                        UpdateNaturalName(newItem);
                         Stock.Add(item, newItem);
                     }
                     yield return true;
@@ -228,7 +232,7 @@ namespace IngameScript
                             if (!Stock.ContainsKey(key))
                             {
                                 Item newItem = new Item(item.Type.ToString(), this);
-                                newItem.NaturalName = Translation.ContainsKey(newItem.KeyString) ? Translation[newItem.KeyString] : newItem.Name;
+                                UpdateNaturalName(newItem);
                                 Stock.Add(key, newItem);
                             }
                             Stock[key].Amount += item.Amount.ToIntSafe();
@@ -284,15 +288,17 @@ namespace IngameScript
             if (ini.TryParse(Me.CustomData))
             {
                 delay = ini.Get(ConfigSection, "delay").ToInt32(3);
-                TranslateEnabled = ini.ContainsSection("translation");
+                var translateEnabled = ini.ContainsSection("translation");
                 FilterEnabled = ini.Get(ConfigSection, "enablefilter").ToBoolean(true);
-                separators = ini.Get(ConfigSection, "separators").ToBoolean(true);
+                Separators = ini.Get(ConfigSection, "separators").ToBoolean(true);
                 StoreKnownTypes = ini.Get(ConfigSection, "savetypes").ToBoolean(true);
                 FormatAmount = ini.Get(ConfigSection, "format_amount").ToBoolean(true);
                 var formatNames = ini.Get(ConfigSection, "format_names").ToBoolean(true);
 
-                var updateAllNames = formatNames != FormatNames;
+                var updateAllNames = formatNames != FormatNames || TranslateEnabled != translateEnabled;
+                
                 FormatNames = formatNames;
+                TranslateEnabled = translateEnabled;
                 
                 if (TranslateEnabled)
                 {
@@ -314,9 +320,9 @@ namespace IngameScript
                             Translation.Add(lowerKey, ini.Get(key).ToString());
                         }
                         
-                        if (!updateAllNames && Stock.ContainsKey(lowerKey))
+                        if (!updateAllNames && Stock.ContainsKey(ob + key.Name))
                         {
-                            UpdateNaturalName(Stock[lowerKey]);
+                            UpdateNaturalName(Stock[ob + key.Name]);
                         }
                     }
                 }
@@ -333,14 +339,20 @@ namespace IngameScript
 
         private void RenderScreens()
         {
-            Echo(Version);
-            Echo(Screens.Count + " screens");
-            Echo(Containers.Count + " blocks with inventories");
-            Echo(Stock.Count + " items being tracked");
-            Echo("Saving " + (StoreKnownTypes ? "enabled" : "disabled"));
-            Echo("Filtering " + (FilterEnabled ? "enabled" : "disabled"));
-            Echo("Separators (global default) " + (separators ? "enabled" : "disabled"));
-            Echo("Translation " + (TranslateEnabled ? "enabled" : "disabled"));
+            echoBuffer.Clear();
+            echoBuffer.AppendLine(Version);
+            echoBuffer.AppendLine(Screens.Count + " screens");
+            echoBuffer.AppendLine(Containers.Count + " blocks with inventories");
+            echoBuffer.AppendLine(Stock.Count + " items being tracked");
+            echoBuffer.AppendLine("Saving " + (StoreKnownTypes ? "enabled" : "disabled"));
+            echoBuffer.AppendLine("Filtering " + (FilterEnabled ? "enabled" : "disabled"));
+            echoBuffer.AppendLine("Separators (global default) " + (Separators ? "enabled" : "disabled"));
+            echoBuffer.AppendLine("Translation " + (TranslateEnabled ? "enabled" : "disabled"));
+            echoBuffer.AppendLine("Name Auto-Format " + (FormatNames ? "enabled" : "disabled"));
+            echoBuffer.AppendLine("Amount Auto-Format " + (FormatAmount ? "enabled" : "disabled"));
+            
+            echoString = echoBuffer.ToString();
+            
             foreach (var display in Screens)
             {
                 display.Render(Stock);
@@ -349,6 +361,8 @@ namespace IngameScript
 
         public void Main(string argument, UpdateType updateSource)
         {
+            Echo(echoString);
+            
             if ((updateSource & UpdateType.Once) == UpdateType.Once)
             {
                 RunItemCounter();
@@ -435,7 +449,7 @@ namespace IngameScript
             if (input >= 1000000000)
                 // Congratulations, you've successfully created a singularity
                 return (input / 1000000000d).ToString("0.00") + "G"; 
-            if (input >= 10000000)
+            if (input >= 1000000)
                 return (input / 1000000d).ToString("0.00") + "M";
             if (input >= 10000)
                 return (input / 1000d).ToString("0.00") + "k";
