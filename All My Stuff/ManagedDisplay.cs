@@ -42,21 +42,23 @@ namespace IngameScript
             private string previousType;
             private string Heading = "Item";
             private bool unfiltered = true;
-            private bool SupressZeros;
+            private bool SuppressZeros;
             public bool UseFormatedAmount { get; }
+            private bool separators = true;
             private string Filter;
             private Color BackgroundColor, ForegroundColor;
 
             public ManagedDisplay(IMyTextSurface surface, float scale = 1.0f, 
                 Color highlightColor = new Color(), 
                 int linesToSkip = 0, bool monospace = false, 
-                bool suppressZeros=false, bool useFormatedAmount = false)
+                bool suppressZeros=false, bool separators=true, bool useFormatedAmount = false)
             {
                 this.surface = surface;
                 this.HighlightColor = highlightColor;
                 this.linesToSkip = linesToSkip;
                 this.monospace = monospace;
-                this.SupressZeros = suppressZeros;
+                this.separators = separators;
+                this.SuppressZeros = suppressZeros;
                 this.UseFormatedAmount = useFormatedAmount;
                 this.BackgroundColor = surface.ScriptBackgroundColor;
                 this.ForegroundColor = surface.ScriptForegroundColor;
@@ -148,11 +150,11 @@ namespace IngameScript
                 {
                     TextColor = surface.ScriptForegroundColor;
                 }
-                var first = previousType == "FIRST";
-                if (previousType != item.ItemType)
+                var beyondFirstRow = previousType != "FIRST";
+                if (separators && (previousType != item.ItemType))
                 {
                     previousType = item.ItemType;
-                    if (!first)
+                    if (beyondFirstRow)
                         frame.Add(new MySprite()
                         {
                             Type = SpriteType.TEXTURE,
@@ -222,7 +224,7 @@ namespace IngameScript
                     // Contains with StringComparison.InvariantCultureIgnoreCase is prohibited )-:
                     if (unfiltered || Filter.ToLower().Contains(Stock[item].ItemType.Substring(Program.characters_to_skip).ToLower()))
                     {
-                        if ((Stock[item].Amount != 0 || !SupressZeros) && ++renderLineCount > linesToSkip)
+                        if ((Stock[item].Amount != 0 || !SuppressZeros) && ++renderLineCount > linesToSkip)
                         {
                             Position.X = viewport.Width / 10f + viewport.Position.X;
                             if (renderLineCount >= linesToSkip && renderLineCount < linesToSkip + WindowSize)

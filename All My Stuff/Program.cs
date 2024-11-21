@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.4.0";
+        static readonly string Version = "Version 1.6.0";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
@@ -38,13 +38,13 @@ namespace IngameScript
         IEnumerator<bool> _stateMachine;
         int delayCounter = 0;
         int delay;
-        private const int characters_to_skip = 16; // same as "MyObjectBuilder_".Length
+        private static int characters_to_skip = "MyObjectBuilder_".Length;
         bool StoreKnownTypes;  // Enable save known types globally
         bool TranslateEnabled; // Enable translate feature globally
         bool FilterEnabled; // Enable filter feature globally
         bool FormatNames; // Enable name prettify feature globally
         bool FormatAmount; // Enable Number Abbreviation feature globally
-
+        bool separators;    // Control whether type separator lines are displayed on screen
         bool rebuild;
         bool clear;
         private List<MyIniKey> TranslationKeys = new List<MyIniKey>();
@@ -58,17 +58,16 @@ namespace IngameScript
                 Name = NaturalName = temp[1];
                 ItemType = temp[0];
                 Amount = amount;
-                FormatedAmount = MetricFormat(amount);
                 KeyString = program.TranslateEnabled ? itemType.Substring(characters_to_skip).ToLower() : "";
             }
 
             public string KeyString;
             public int Amount;
-            public string FormatedAmount;
             public string Sprite;
             public string Name;
             public string ItemType;
             public string NaturalName;
+            public string FormatedAmount;
         }
 
         public void GetBlocks()
@@ -91,6 +90,7 @@ namespace IngameScript
             var linesToSkip = ini.Get(section, "skip").ToInt16();
             bool monospace = ini.Get(section, "mono").ToBoolean();
             bool suppressZeros = ini.Get(section, "suppress_zeros").ToBoolean();
+            bool separators = ini.Get(section, "separators").ToBoolean(this.separators);
             float scale = ini.Get(section, "scale").ToSingle(1.0f);
             bool formatAmount = ini.Get(section, "format_amount").ToBoolean(FormatAmount);
             string DefaultColor = "FF4500";
@@ -104,7 +104,7 @@ namespace IngameScript
                 B = byte.Parse(ColorStr.Substring(4, 2), System.Globalization.NumberStyles.HexNumber),
                 A = 255
             };
-            var managedDisplay = new ManagedDisplay(display, scale, color, linesToSkip, monospace, suppressZeros, formatAmount);
+            var managedDisplay = new ManagedDisplay(display, scale, color, linesToSkip, monospace, suppressZeros, separators, formatAmount);
             if (FilterEnabled)
             {
                 managedDisplay.SetFilter(ini.Get(section, "filter").ToString(null));
@@ -196,7 +196,8 @@ namespace IngameScript
                     if (!Stock.ContainsKey(item))
                     {
                         Item newItem = new Item(item, this);
-                        UpdateNaturalName(newItem);
+                        string translation;
+                        newItem.NaturalName = Translation.TryGetValue(newItem.KeyString, out translation) ? translation : newItem.Name;
                         Stock.Add(item, newItem);
                     }
                     yield return true;
@@ -227,7 +228,7 @@ namespace IngameScript
                             if (!Stock.ContainsKey(key))
                             {
                                 Item newItem = new Item(item.Type.ToString(), this);
-                                UpdateNaturalName(newItem);
+                                newItem.NaturalName = Translation.ContainsKey(newItem.KeyString) ? Translation[newItem.KeyString] : newItem.Name;
                                 Stock.Add(key, newItem);
                             }
                             Stock[key].Amount += item.Amount.ToIntSafe();
@@ -239,8 +240,8 @@ namespace IngameScript
             
             if(FormatAmount || Screens.Any(s => s.UseFormatedAmount))
             {
-                foreach (var stock in Stock.Values) 
-                    stock.FormatedAmount = MetricFormat(stock.Amount);
+                foreach (var item in Stock.Values) 
+                    item.FormatedAmount = MetricFormat(item.Amount);
             }
             
             RenderScreens();
@@ -285,6 +286,7 @@ namespace IngameScript
                 delay = ini.Get(ConfigSection, "delay").ToInt32(3);
                 TranslateEnabled = ini.ContainsSection("translation");
                 FilterEnabled = ini.Get(ConfigSection, "enablefilter").ToBoolean(true);
+                separators = ini.Get(ConfigSection, "separators").ToBoolean(true);
                 StoreKnownTypes = ini.Get(ConfigSection, "savetypes").ToBoolean(true);
                 FormatAmount = ini.Get(ConfigSection, "format_amount").ToBoolean(true);
                 var formatNames = ini.Get(ConfigSection, "format_names").ToBoolean(true);
@@ -337,6 +339,7 @@ namespace IngameScript
             Echo(Stock.Count + " items being tracked");
             Echo("Saving " + (StoreKnownTypes ? "enabled" : "disabled"));
             Echo("Filtering " + (FilterEnabled ? "enabled" : "disabled"));
+            Echo("Separators (global default) " + (separators ? "enabled" : "disabled"));
             Echo("Translation " + (TranslateEnabled ? "enabled" : "disabled"));
             foreach (var display in Screens)
             {

@@ -29,6 +29,8 @@ suppress_zeros = false
 # Enable filtering
 enablefilter = true
 filter = ConsumableItem, Datapad, PhysicalGunObject, AmmoMagazine, Ore, Ingot, Component
+# Enable saved game persistence
+savetypes = true
 ```
 
 An alternative, for those who wish to use more than one screen on a given
@@ -53,6 +55,10 @@ skip=15
 ```
 
 You can set up a filter by adding a filter option. The options in the example above are all the valid ones, and you can have any selection that you want. As with colour, scale and skip, the filter is a per-screen option.
+
+To re-scan for new inventories and reload the configuration, run with the argument `rebuild`
+
+To clear any items from the inventory display that have a zero count, run with the argument `clear`
 
 You can configure translations in the Custom Data section of the Programmable Block (this is global). This allows you to change the labels from the default internals. It might harm performance; removing the configuration will disable it.
 
