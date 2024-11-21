@@ -366,3 +366,9 @@ FodyWeavers.xsd
 # MDK - Space Engineers MDK
 *.props
 *.zip
+All My Stuff/All My Stuff.csproj
+All My Stuff/MDK/MDK.paths.props
+/All My Stuff/MDK
+All My Stuff/MDK/MDK.paths.props
+/All My Stuff/.idea
+/.idea
