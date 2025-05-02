@@ -14,7 +14,7 @@ color = 00FF55 # Use this to customise the header color of a screen
 mono = false     # change to true to display numbers in the monospace font
 suppress_zeros = false # Change to true to hide (red) lines showing zero stock
 enablefilter = true  # Enable filtering
-separators = true  # Enable type separator lines
+format_amount = true  # Abbreviates numbers to K, M, or G
 filter = ConsumableItem, Datapad, PhysicalGunObject, AmmoMagazine, Ore, Ingot, Component
 savetypes = true
 
@@ -37,8 +37,17 @@ skip=10
 scale=0.4
 skip=15
 
-If you would like to translate item names, place this config section into Custom
-Data as well. A full version is available on GitHub and the Workshop page:
+This script will try to "prettify" the names of the items automatically
+example "PrototechFrame" to "Prototech Frame", you can disable this
+feature by placing this into the Custom Data of the programable block:
+
+[inventory]
+format_names = false
+
+This is not possible to some items, like "Gravel", since the in-Game name is
+different than the item name "Ingots/Stone". If you would like to manually 
+translate item names, place this config section into Custom Data as well. 
+A full version is available on GitHub and the Workshop page:
 
 [translation]
 ingots/stone=Gravel

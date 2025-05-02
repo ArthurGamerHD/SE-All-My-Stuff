@@ -42,19 +42,24 @@ namespace IngameScript
             private string previousType;
             private string Heading = "Item";
             private bool unfiltered = true;
-            private bool SuppressZeros = false;
+            private bool SuppressZeros;
+            public bool UseFormatedAmount { get; }
             private bool separators = true;
             private string Filter;
             private Color BackgroundColor, ForegroundColor;
 
-            public ManagedDisplay(IMyTextSurface surface, float scale = 1.0f, Color highlightColor = new Color(), int linesToSkip = 0, bool monospace = false, bool suppressZeros=false, bool separators=true)
+            public ManagedDisplay(IMyTextSurface surface, float scale = 1.0f, 
+                Color highlightColor = new Color(), 
+                int linesToSkip = 0, bool monospace = false, 
+                bool suppressZeros=false, bool separators=true, bool useFormatedAmount = false)
             {
                 this.surface = surface;
                 this.HighlightColor = highlightColor;
                 this.linesToSkip = linesToSkip;
                 this.monospace = monospace;
-                this.SuppressZeros = suppressZeros;
                 this.separators = separators;
+                this.SuppressZeros = suppressZeros;
+                this.UseFormatedAmount = useFormatedAmount;
                 this.BackgroundColor = surface.ScriptBackgroundColor;
                 this.ForegroundColor = surface.ScriptForegroundColor;
 
@@ -187,7 +192,7 @@ namespace IngameScript
                 frame.Add(new MySprite()
                 {
                     Type = SpriteType.TEXT,
-                    Data = item.Amount.ToString(),
+                    Data = UseFormatedAmount ? item.FormatedAmount : item.Amount.ToString(),
                     Position = Position,
                     RotationOrScale = RegularFontSize,
                     Color = TextColor,
