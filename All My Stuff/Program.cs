@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.6.0";
+        static readonly string Version = "Version 1.6.0-C";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
@@ -43,6 +43,10 @@ namespace IngameScript
 
         const string ob  = "MyObjectBuilder_";
         const int characters_to_skip = 16; // same as "ob.Length"
+
+        const string ci  = "ColorfulIcons_";
+        const int characters_to_skip_ci = 14; // same as "ci.Length"
+        List<string> colorfulSpriteTypeCache = new List<string>();
 
         bool StoreKnownTypes;  // Enable save known types globally
         bool TranslateEnabled; // Enable translate feature globally
@@ -64,6 +68,10 @@ namespace IngameScript
                 ItemType = temp[0];
                 Amount = amount;
                 KeyString = program.TranslateEnabled ? itemType.Substring(characters_to_skip).ToLower() : "";
+
+                var typeSlashName = itemType.Substring(characters_to_skip);
+                if (program.colorfulSpriteTypeCache.Contains(typeSlashName)) //Get if Colorful Icons has a replacement for this Type/Item
+                    Sprite = ci + typeSlashName;
             }
 
             public string KeyString;
@@ -279,6 +287,12 @@ namespace IngameScript
             ReadConfig();
             GetBlocks();
 
+            var temp = new List<string>();
+            Me.GetSurface(0).GetSprites(temp);
+            colorfulSpriteTypeCache.AddRange(
+                temp.Where(a => a.StartsWith(ci))
+                    .Select(a => a.Substring(characters_to_skip_ci))); // Get all replacements from Colorful Icons
+
             if (StoreKnownTypes)
                 _stateMachine = LoadStorage();
         }
@@ -340,6 +354,14 @@ namespace IngameScript
         private void RenderScreens()
         {
             echoBuffer.Clear();
+            
+            if(colorfulSpriteTypeCache.Count == 0)
+                echoBuffer.AppendLine("[Color=#FFf2c55c]" +
+                                      "WARNING: Colorful Icons not detected\n" +
+                                      "Install \"Colorful Icons\" by typekcz\n" +
+                                      "or regular \"All My Stuff\" by Brianetta" +
+                                      "[/color]\n\n");
+            
             echoBuffer.AppendLine(Version);
             echoBuffer.AppendLine(Screens.Count + " screens");
             echoBuffer.AppendLine(Containers.Count + " blocks with inventories");
