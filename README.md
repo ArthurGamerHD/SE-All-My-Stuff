@@ -1,5 +1,5 @@
 
-# All My Stuff (version 1.3.0)
+# All My Stuff (version 1.6.0)
 *A script to keep track of your inventory*
 
 Configure using Custom Data. In the Programmable Block, the Inventory section
