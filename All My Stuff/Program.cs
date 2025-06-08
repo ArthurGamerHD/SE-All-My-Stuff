@@ -36,6 +36,7 @@ namespace IngameScript
         List<MyInventoryItem> Items = new List<MyInventoryItem>();
         List<ManagedDisplay> Screens = new List<ManagedDisplay>();
         StringBuilder echoBuffer = new StringBuilder();
+        StringBuilder persistentEchoBuffer = new StringBuilder();
         string echoString = "Init...";
         IEnumerator<bool> _stateMachine;
         int delayCounter = 0;
@@ -138,6 +139,7 @@ namespace IngameScript
             {
                 if (section.StartsWith(DisplaySectionPrefix, ignoreCase))
                 {
+                    bool found = false;
                     for (int displayNumber = 0; displayNumber < Provider.SurfaceCount; ++displayNumber)
                     {
                         if (displayNumber < Provider.SurfaceCount)
@@ -148,8 +150,15 @@ namespace IngameScript
                             {
                                 AddScreen(Provider, displayNumber, section);
                                 retval = true;
+                                found = true;
                             }
                         }
+                    }
+
+                    if (!found)
+                    {
+                        var displayNumber = section.Substring(DisplaySectionPrefix.Length);
+                        persistentEchoBuffer.AppendLine($"\n[Color={warningColor}]Warning: {block.CustomName} doesn't have a display number {displayNumber}[/Color]");
                     }
                 }
             }
@@ -169,7 +178,7 @@ namespace IngameScript
             }
             else
             {
-                echoBuffer.AppendLine("Warning: " + block.CustomName + " doesn't have a display number " + ini.Get(ConfigSection, "display").ToString());
+                persistentEchoBuffer.AppendLine($"\n[Color={warningColor}]Warning: {block.CustomName} doesn't have a display number {displayNumber}[/Color]");
             }
         }
 
@@ -348,6 +357,7 @@ namespace IngameScript
         private void RenderScreens()
         {
             echoBuffer.Clear();
+            
             echoBuffer.AppendLine(Version);
             echoBuffer.AppendLine(Screens.Count + " screens");
             echoBuffer.AppendLine(Containers.Count + " blocks with inventories");
@@ -363,6 +373,8 @@ namespace IngameScript
             {
                 echoBuffer.AppendLine($"\n[Color={warningColor}]Warning: Translations is enabled but no translations have been found[/Color]");
             }
+            
+            echoBuffer.Append(persistentEchoBuffer);
             
             echoString = echoBuffer.ToString();
             
@@ -386,6 +398,7 @@ namespace IngameScript
                 {
                     if (rebuild)
                     {
+                        persistentEchoBuffer.Clear();
                         rebuild = false;
                         ReadConfig();
                         GetBlocks();
