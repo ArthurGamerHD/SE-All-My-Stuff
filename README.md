@@ -6,7 +6,8 @@ Configure using Custom Data. In the Programmable Block, the Inventory section
 sets the options while the Translation section provides alternative labels. Put an
 Inventory section into any screen's Custom Data to activate it, which can be empty.
 
-Arthur maintains a fork for use with the Colorful Icons mod [here](https://github.com/ArthurGamerHD/SE-All-My-Stuff/tree/Colorful-Icons).
+~~Arthur maintains a fork for use with the Colorful Icons mod [here](https://github.com/ArthurGamerHD/SE-All-My-Stuff/tree/Colorful-Icons).~~ (You are already here)
+Original script without the Colorful Icons patch [Here](https://github.com/Brianetta/SE-All-My-Stuff)
 
 Here are the defaults:
 
