@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         List<IMyTerminalBlock> Containers = new List<IMyTerminalBlock>();
-        static readonly string Version = "Version 1.6.0";
+        static readonly string Version = "Version 1.6.1";
         MyIni ini = new MyIni();
         static readonly string ConfigSection = "Inventory";
         static readonly string DisplaySectionPrefix = ConfigSection + "_Display";
@@ -41,6 +41,14 @@ namespace IngameScript
         int delayCounter = 0;
         int delay;
 
+        private const string nominalColor = "#FF00A800";
+        private const string warningColor = "#FFF2C55C";
+        private const string errorColor = "#FFDB5C5C";
+        
+        const string enabled = "[Color=" + nominalColor +"]enabled[/Color]";
+        const string warning = "[Color=" + warningColor +"]warning[/Color]";
+        const string disabled = "[Color=" + errorColor +"]disabled[/Color]";
+        
         const string ob  = "MyObjectBuilder_";
         const int characters_to_skip = 16; // same as "ob.Length"
 
@@ -344,12 +352,17 @@ namespace IngameScript
             echoBuffer.AppendLine(Screens.Count + " screens");
             echoBuffer.AppendLine(Containers.Count + " blocks with inventories");
             echoBuffer.AppendLine(Stock.Count + " items being tracked");
-            echoBuffer.AppendLine("Saving " + (StoreKnownTypes ? "enabled" : "disabled"));
-            echoBuffer.AppendLine("Filtering " + (FilterEnabled ? "enabled" : "disabled"));
-            echoBuffer.AppendLine("Separators (global default) " + (Separators ? "enabled" : "disabled"));
-            echoBuffer.AppendLine("Translation " + (TranslateEnabled ? "enabled" : "disabled"));
-            echoBuffer.AppendLine("Name Auto-Format " + (FormatNames ? "enabled" : "disabled"));
-            echoBuffer.AppendLine("Amount Auto-Format " + (FormatAmount ? "enabled" : "disabled"));
+            echoBuffer.AppendLine("Saving " + (StoreKnownTypes ? enabled : disabled));
+            echoBuffer.AppendLine("Filtering " + (FilterEnabled ? enabled : disabled));
+            echoBuffer.AppendLine("Separators (global default) " + (Separators ? enabled : disabled));
+            echoBuffer.AppendLine("Translation " + (TranslateEnabled ? Translation.Any() ? enabled : warning : disabled));
+            echoBuffer.AppendLine("Name Auto-Format " + (FormatNames ? enabled : disabled));
+            echoBuffer.AppendLine("Amount Auto-Format " + (FormatAmount ? enabled : disabled));
+
+            if (TranslateEnabled && !Translation.Any())
+            {
+                echoBuffer.AppendLine($"\n[Color={warningColor}]Warning: Translations is enabled but no translations have been found[/Color]");
+            }
             
             echoString = echoBuffer.ToString();
             
